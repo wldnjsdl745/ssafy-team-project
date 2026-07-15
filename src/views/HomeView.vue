@@ -4,16 +4,18 @@ import heroImage from '@/assets/images/running_man.png'
 
 <template>
   <section class="home-shell">
-    <div class="hero-card">
+    <article class="hero-panel" :style="{ backgroundImage: `url(${heroImage})` }">
+      <div class="hero-overlay"></div>
       <div class="hero-copy fade-up">
         <p class="eyebrow">LocalHub · 서울 레포츠 추천</p>
         <h1>
-          원하는 지역에서
-          <span>운동할 곳을 바로 찾아보세요</span>
+          <span class="hero-heading-line">
+            원하는 지역<span class="hero-highlight">에서</span>
+          </span>
+          <span class="hero-heading-line hero-highlight">운동할 곳을 바로 찾아보세요</span>
         </h1>
         <p class="subtitle">
-          서울 곳곳의 레포츠 장소를 탐색하고, 추천을 나누며,
-          도장을 모아가며 나만의 활동 루트를 완성해보세요.
+          서울 곳곳의 레포츠 장소를 탐색하고, 추천을 나누며, 도장을 모아가며 나만의 활동 루트를 완성해보세요.
         </p>
 
         <div class="hero-actions">
@@ -21,25 +23,7 @@ import heroImage from '@/assets/images/running_man.png'
           <RouterLink to="/community" class="ghost-btn" aria-label="커뮤니티 보기">커뮤니티 보기</RouterLink>
         </div>
       </div>
-
-      <div class="hero-image" :style="{ backgroundImage: `url(${heroImage})` }">
-        <div class="hero-image-overlay"></div>
-        <div class="hero-stats">
-          <div>
-            <p>추천 장소</p>
-            <strong>서울 전역</strong>
-          </div>
-          <div>
-            <p>챗봇 추천</p>
-            <strong>맞춤 검색</strong>
-          </div>
-          <div>
-            <p>도장 기능</p>
-            <strong>기록 관리</strong>
-          </div>
-        </div>
-      </div>
-    </div>
+    </article>
 
     <div class="feature-grid">
       <RouterLink to="/places" class="feature-card">
@@ -89,55 +73,95 @@ import heroImage from '@/assets/images/running_man.png'
 .home-shell {
   display: flex;
   flex-direction: column;
-  gap: 28px;
-  padding: 32px 16px 48px;
-  max-width: 1100px;
+  gap: 40px;
+  padding: 0 16px 56px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
-.hero-card {
-  display: grid;
-  grid-template-columns: 1.3fr 0.9fr;
-  gap: 24px;
-  padding: 36px;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--brand-2) 0%, var(--brand-1) 100%);
-  color: var(--accent);
-  box-shadow: var(--shadow-lg);
+.hero-panel {
+  position: relative;
+  min-height: 88vh;
+  display: flex;
+  align-items: center;
+  padding: 60px 32px;
+  border-radius: 32px;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.18);
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(18, 30, 55, 0.36), rgba(10, 14, 24, 0.88));
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 980px;
+  color: #fff;
 }
 
 .hero-copy h1 {
-  margin: 0 0 14px;
-  font-size: clamp(1.9rem, 3.2vw, 2.8rem);
-  line-height: 1.15;
+  margin: 0 0 18px;
+  font-size: clamp(3rem, 6vw, 4.4rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hero-copy h1 {
+  margin: 0 0 18px;
+  font-size: clamp(3rem, 6vw, 4.4rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hero-heading-line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-width: 100%;
+}
+
+.hero-highlight {
+  color: #ffe2a2;
 }
 
 .hero-copy h1 span {
-  display: block;
-  color: var(--accent);
+  display: inline;
 }
 
 .eyebrow {
-  margin: 0 0 10px;
-  font-size: 0.82rem;
+  margin: 0 0 16px;
+  font-size: 0.86rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(240,211,170,0.95);
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .subtitle {
-  margin: 0 0 22px;
-  max-width: 640px;
-  color: rgba(255,247,239,0.95);
-  font-size: 1rem;
-  line-height: 1.7;
+  margin: 0 0 28px;
+  max-width: 980px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.05rem;
+  line-height: 1.65;
+  white-space: normal;
 }
 
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 14px;
 }
 
 .primary-btn,
@@ -145,23 +169,23 @@ import heroImage from '@/assets/images/running_man.png'
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 14px 20px;
+  padding: 16px 26px;
   border-radius: 999px;
   font-weight: 800;
-  transition: transform var(--transition-default), box-shadow var(--transition-default);
   text-decoration: none;
+  transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
 
 .primary-btn {
-  background: var(--card-bg);
-  color: var(--brand-2);
-  box-shadow: 0 8px 22px rgba(16,18,22,0.12);
+  background: #ffebc7;
+  color: #3b2219;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.12);
 }
 
 .ghost-btn {
-  border: 1px solid rgba(255,255,255,0.18);
-  color: rgba(255,247,239,0.95);
-  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .primary-btn:hover,
@@ -173,49 +197,100 @@ import heroImage from '@/assets/images/running_man.png'
 .primary-btn:focus-visible,
 .ghost-btn:focus-visible,
 .feature-card:focus-visible {
-  outline: 3px solid rgba(255,227,184,0.22);
+  outline: 3px solid rgba(255, 227, 184, 0.22);
   outline-offset: 4px;
 }
 
-.hero-image {
-  position: relative;
-  min-height: 380px;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background-size: cover;
-  background-position: center;
-  box-shadow: inset 0 0 0 2000px rgba(16, 24, 40, 0.22);
-}
-
-.hero-image-overlay {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12), transparent 30%),
-    linear-gradient(180deg, rgba(0,0,0,0.04), rgba(12,18,35,0.58) 100%);
-}
-
-.hero-stats {
-  position: absolute;
-  left: 20px;
-  bottom: 20px;
-  right: 20px;
+.feature-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
-.hero-stats div {
-  padding: 12px;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.12);
-  color: #fff;
+.feature-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 28px;
+  border-radius: 28px;
+  background: #ffffff;
+  color: #1c1e24;
+  box-shadow: 0 18px 40px rgba(20, 32, 64, 0.08);
+  transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
-.hero-stats p {
-  margin: 0 0 6px;
-  font-size: 0.82rem;
-  opacity: 0.94;
+.feature-icon {
+  font-size: 1.8rem;
+}
+
+.section-title {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: center;
+}
+
+.section-title h2 {
+  margin: 0;
+  font-size: clamp(2rem, 3.2vw, 2.8rem);
+  line-height: 1.1;
+}
+
+.info-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.info-item {
+  padding: 26px;
+  border-radius: 24px;
+  background: #fff8f1;
+  border: 1px solid rgba(240, 211, 170, 0.28);
+}
+
+.info-item strong {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+}
+
+.info-item p {
+  margin: 0;
+  color: #4f4b45;
+  line-height: 1.7;
+}
+
+@media (max-width: 860px) {
+  .hero-panel {
+    padding: 48px 22px;
+    min-height: 75vh;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(2.8rem, 7vw, 3.6rem);
+  }
+}
+
+@media (max-width: 640px) {
+  .home-shell {
+    padding: 0 14px 42px;
+  }
+
+  .hero-panel {
+    min-height: 68vh;
+    padding: 34px 18px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .primary-btn,
+  .ghost-btn {
+    width: 100%;
+  }
 }
 
 .hero-stats strong {

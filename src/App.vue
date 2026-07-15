@@ -1,6 +1,6 @@
 <template>
   <header class="topbar">
-    <div class="brand">LocalHub</div>
+    <RouterLink to="/" class="brand">LocalHub</RouterLink>
     <nav class="nav-links">
       <RouterLink to="/">홈</RouterLink>
       <RouterLink to="/places">장소 목록</RouterLink>
