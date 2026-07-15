@@ -1,10 +1,10 @@
 <script setup>
-import { ref, onMounted, nextTick, watch } from "vue"
-import { getRandomRecommendation, getRecommendations } from "@/services/recommendService"
-import { extractDistrict } from "@/api/openRouter"
+import { ref, onMounted, nextTick, watch } from 'vue'
+import { getRandomRecommendation, getRecommendations } from '@/services/recommendService'
+import { extractDistrict } from '@/api/openRouter'
 
 const messages = ref([])
-const input = ref("")
+const input = ref('')
 const messagesContainer = ref(null)
 
 let recommendations = []
@@ -17,57 +17,87 @@ function scrollToBottom() {
   })
 }
 
+
+
 onMounted(async () => {
+
   recommendations = await getRecommendations()
+
 
   messages.value.push({
     role: "bot",
-    text: `안녕하세요! 서울 레포츠 추천 챗봇입니다.
+    text:
+`안녕하세요! 운동 장소 추천 챗봇입니다.
 
-원하는 지역을 입력해 주세요.
+원하는 지역을 자연스럽게 입력해주세요.
 예)
-- 노원구 운동할 곳 추천해줘
-- 상계동 근처 추천해줘
-- 강남에서 가볍게 운동할 곳`,
+- 노원구 운동할 곳 알려줘
+- 상계동 근처 추천해줘`
   })
+
 
   scrollToBottom()
 })
+
+
 
 watch(
   messages,
   () => {
     scrollToBottom()
   },
-  { deep: true },
+  { deep:true }
 )
 
+
+
 async function sendMessage() {
+
+
   const userMessage = input.value.trim()
+
 
   if (!userMessage) {
     return
   }
 
+
+
+  // 사용자 메시지 표시
   messages.value.push({
-    role: "user",
-    text: userMessage,
+    role:"user",
+    text:userMessage
   })
+
+
 
   input.value = ""
 
-  const aiResult = await extractDistrict(userMessage)
-  const district = aiResult.district
+
+
+  // AI 지역 추출
+  const aiResult =
+    await extractDistrict(userMessage)
+
+
+
+  const district =
+    aiResult.district
+
+
 
   if (!district) {
+
     messages.value.push({
-      role: "bot",
-      text: `지역을 찾지 못했습니다.
+      role:"bot",
+      text:
+`지역을 찾지 못했습니다.
 
 예)
 "노원구 운동 장소 추천해줘"
-"상계동 근처 알려줘"`,
+"상계동 근처 알려줘"`
     })
+
     return
   }
 
@@ -75,23 +105,33 @@ async function sendMessage() {
 
   if (result) {
     messages.value.push({
-      role: "bot",
-      text: `${district} 기준으로 추천드릴게요.
+      role:'bot',
+      text:
+`${district} 운동 장소를 추천드립니다.
 
 📍 ${result.title}
 
-운동 종류: ${result.category || "레포츠"}
+운동 종류:
+${result.category}
 
-주소: ${result.addr1 || "주소 정보 없음"}
+주소:
+${result.address}
 
-${result.description || "추천 장소의 상세 설명이 준비되어 있습니다."}`,
+${result.description}`
     })
   } else {
+
+
     messages.value.push({
-      role: "bot",
-      text: `${district}에 해당하는 추천 장소가 없습니다.`,
+      role:"bot",
+      text:
+`${district}에 등록된 추천 장소가 없습니다.`
     })
+
   }
+
+
+
 }
 </script>
 
