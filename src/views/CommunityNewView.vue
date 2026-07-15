@@ -151,8 +151,8 @@ const closeModal = () => {
 const addTag = () => {
   const value = tagInput.value.trim();
   if (!value) return;
-  if (form.tags.length >= 5) return alert('태그는 최대 5개까지 입력할 수 있습니다.');[cite: 1]
-  if (value.length > 10) return alert('태그는 10자 이내로 입력해 주세요.');[cite: 1]
+  if (form.tags.length >= 5) return alert('태그는 최대 5개까지 입력할 수 있습니다.');
+  if (value.length > 10) return alert('태그는 10자 이내로 입력해 주세요.');
   if (!form.tags.includes(value)) form.tags.push(value);
   tagInput.value = '';
 };
@@ -160,9 +160,9 @@ const addTag = () => {
 const removeTag = (index) => form.tags.splice(index, 1);
 
 const validateForm = () => {
-  if (form.title.trim().length < 2 || form.title.trim().length > 60) return alert('제목을 2자 이상 입력해 주세요.'), false;[cite: 1]
-  if (form.content.trim().length < 5 || form.content.trim().length > 2000) return alert('내용을 5자 이상 입력해 주세요.'), false;[cite: 1]
-  if (!/^[a-zA-Z0-9]{4,12}$/.test(form.password)) return alert('수정·삭제용 비밀번호를 4자 이상 입력해 주세요.'), false;[cite: 1]
+  if (form.title.trim().length < 2 || form.title.trim().length > 60) return alert('제목을 2자 이상 입력해 주세요.'), false;
+  if (form.content.trim().length < 5 || form.content.trim().length > 2000) return alert('내용을 5자 이상 입력해 주세요.'), false;
+  if (!/^[a-zA-Z0-9]{4,12}$/.test(form.password)) return alert('수정·삭제용 비밀번호를 4자 이상 입력해 주세요.'), false;
   return true;
 };
 
@@ -184,10 +184,10 @@ const submitPost = () => {
     imageDataUrl: null,
     createdAt: now,
     updatedAt: now
-  };[cite: 1]
+  };
 
   postService.addPost(newPost);
-  alert('게시글이 성공적으로 작성되었습니다.');[cite: 1]
+  alert('게시글이 성공적으로 작성되었습니다.');
 
   // 1. 목록 데이터 최신화
   posts.value = postService.getAllPosts(); 
