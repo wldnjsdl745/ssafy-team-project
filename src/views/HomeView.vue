@@ -1,5 +1,25 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import heroImage from '@/assets/images/running_man.png'
+import { postService } from '../servies/postService' // 경로 확인 필요
+
+// 최신 게시글 상태 관리
+const recentPosts = ref([])
+
+onMounted(() => {
+  // 전체 게시글을 가져와서 최신순으로 정렬한 뒤 상위 3개만 자릅니다.
+  const allPosts = postService.getAllPosts() || []
+  recentPosts.value = allPosts
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 3)
+})
+
+// 날짜 포맷 유틸
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`
+}
 </script>
 
 <template>
@@ -66,10 +86,42 @@ import heroImage from '@/assets/images/running_man.png'
         </div>
       </div>
     </div>
+
+    <div class="recent-posts-section">
+      <div class="section-title-flex">
+        <div>
+          <p class="eyebrow">Community</p>
+          <h2>최근 올라온 게시글</h2>
+        </div>
+        <RouterLink to="/community" class="view-all-link">전체보기 →</RouterLink>
+      </div>
+
+      <div v-if="recentPosts.length > 0" class="recent-post-grid">
+        <RouterLink 
+          v-for="post in recentPosts" 
+          :key="post.id" 
+          :to="`/community/${post.id}`"
+          class="recent-post-card"
+        >
+          <h3>{{ post.title }}</h3>
+          <p class="post-preview">{{ post.content.length > 50 ? post.content.substring(0, 50) + '...' : post.content }}</p>
+          <div class="post-meta">
+            <span class="meta-item">👀 {{ post.viewCount || 0 }}</span>
+            <span class="meta-item">❤️ {{ post.likeCount || 0 }}</span>
+            <span class="meta-date">{{ formatDate(post.createdAt) }}</span>
+          </div>
+        </RouterLink>
+      </div>
+      
+      <div v-else class="empty-state">
+        <p>아직 작성된 게시글이 없습니다. 첫 번째 글을 남겨보세요!</p>
+      </div>
+    </div>
   </section>
 </template>
 
 <style scoped>
+/* --- 1. 기본 레이아웃 및 기존 스타일 --- */
 .home-shell {
   display: flex;
   flex-direction: column;
@@ -103,16 +155,6 @@ import heroImage from '@/assets/images/running_man.png'
   z-index: 1;
   max-width: 980px;
   color: #fff;
-}
-
-.hero-copy h1 {
-  margin: 0 0 18px;
-  font-size: clamp(3rem, 6vw, 4.4rem);
-  line-height: 1.02;
-  letter-spacing: -0.03em;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .hero-copy h1 {
@@ -190,21 +232,24 @@ import heroImage from '@/assets/images/running_man.png'
 
 .primary-btn:hover,
 .ghost-btn:hover,
-.feature-card:hover {
+.feature-card:hover,
+.recent-post-card:hover {
   transform: translateY(-4px);
 }
 
 .primary-btn:focus-visible,
 .ghost-btn:focus-visible,
-.feature-card:focus-visible {
+.feature-card:focus-visible,
+.recent-post-card:focus-visible {
   outline: 3px solid rgba(255, 227, 184, 0.22);
   outline-offset: 4px;
 }
 
+/* Feature Grid */
 .feature-grid {
   display: grid;
-  gap: 20px;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
 }
 
 .feature-card {
@@ -217,10 +262,40 @@ import heroImage from '@/assets/images/running_man.png'
   color: #1c1e24;
   box-shadow: 0 18px 40px rgba(20, 32, 64, 0.08);
   transition: transform 180ms ease, box-shadow 180ms ease;
+  text-decoration: none;
 }
 
 .feature-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #f7ebdc;
   font-size: 1.8rem;
+  margin-bottom: 12px;
+}
+
+.feature-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.06rem;
+}
+
+.feature-card p {
+  margin: 0;
+  color: #647381;
+  line-height: 1.6;
+}
+
+/* Bottom Section */
+.bottom-section,
+.recent-posts-section {
+  padding: 24px 28px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid rgba(120,88,60,0.08);
+  /* ⭐️ 동일한 그림자 효과 추가 */
+  box-shadow: 0 18px 40px rgba(20, 32, 64, 0.08);
 }
 
 .section-title {
@@ -234,12 +309,14 @@ import heroImage from '@/assets/images/running_man.png'
   margin: 0;
   font-size: clamp(2rem, 3.2vw, 2.8rem);
   line-height: 1.1;
+  color: #34241b;
 }
 
 .info-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 18px;
+  margin-top: 16px;
 }
 
 .info-item {
@@ -253,6 +330,7 @@ import heroImage from '@/assets/images/running_man.png'
   display: block;
   margin-bottom: 12px;
   font-size: 1.1rem;
+  color: #b86b25;
 }
 
 .info-item p {
@@ -261,12 +339,133 @@ import heroImage from '@/assets/images/running_man.png'
   line-height: 1.7;
 }
 
-@media (max-width: 860px) {
+/* --- ⭐️ 2. 추가된 최신 게시글 스타일 (미디어 쿼리 밖으로 빼냄) --- */
+.recent-posts-section {
+  padding: 24px 28px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid rgba(120,88,60,0.08);
+}
+
+.section-title-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 18px;
+}
+
+.section-title-flex h2 {
+  margin: 0;
+  color: #34241b;
+  font-size: 1.35rem;
+}
+
+.view-all-link {
+  font-size: 0.9rem;
+  color: #b86b25;
+  font-weight: 600;
+  text-decoration: none;
+  padding-bottom: 4px;
+}
+
+.view-all-link:hover {
+  text-decoration: underline;
+}
+
+.recent-post-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.recent-post-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #eee;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.recent-post-card h3 {
+  margin: 0 0 10px;
+  font-size: 1.1rem;
+  color: #24313d;
+}
+
+.post-preview {
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+  color: #647381;
+  line-height: 1.5;
+  flex-grow: 1;
+}
+
+.post-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #8c98a4;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 12px;
+}
+
+.meta-date {
+  margin-left: auto;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  background: #faf4eb;
+  border-radius: 12px;
+  color: #647381;
+  font-size: 0.95rem;
+}
+
+/* --- 3. 애니메이션 --- */
+.fade-up {
+  animation: fadeUp 520ms ease-out both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.feature-card:nth-child(1) { animation: fadeUp 560ms ease-out both; }
+.feature-card:nth-child(2) { animation: fadeUp 680ms ease-out both; }
+.feature-card:nth-child(3) { animation: fadeUp 800ms ease-out both; }
+
+/* --- 4. 반응형 미디어 쿼리 (가장 아래에 한 번만 선언) --- */
+@media (max-width: 900px) {
+  .hero-card,
   .hero-panel {
+    grid-template-columns: 1fr;
     padding: 48px 22px;
     min-height: 75vh;
   }
 
+  .feature-grid,
+  .info-list,
+  .recent-post-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-image {
+    min-height: 280px;
+  }
+}
+
+@media (max-width: 860px) {
   .hero-copy h1 {
     font-size: clamp(2.8rem, 7vw, 3.6rem);
   }
@@ -290,123 +489,6 @@ import heroImage from '@/assets/images/running_man.png'
   .primary-btn,
   .ghost-btn {
     width: 100%;
-  }
-}
-
-.hero-stats strong {
-  font-size: 1rem;
-  display: block;
-}
-
-.feature-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.feature-card {
-  display: block;
-  padding: 20px;
-  border-radius: 18px;
-  background: var(--glass);
-  border: 1px solid rgba(120,88,60,0.08);
-  box-shadow: var(--shadow-md);
-  color: #433120;
-  transition: transform var(--transition-default), box-shadow var(--transition-default);
-}
-
-.feature-icon {
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  background: #f7ebdc;
-  font-size: 1.3rem;
-  margin-bottom: 12px;
-}
-
-.feature-card h3 {
-  margin: 0 0 8px;
-  font-size: 1.06rem;
-}
-
-.feature-card p {
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.6;
-}
-
-.bottom-section {
-  padding: 24px 28px;
-  border-radius: 20px;
-  background: var(--glass);
-  border: 1px solid rgba(120,88,60,0.08);
-}
-
-.section-title h2 {
-  margin: 0;
-  color: #34241b;
-  font-size: 1.35rem;
-}
-
-.info-list {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 16px;
-}
-
-.info-item {
-  padding: 16px;
-  border-radius: 12px;
-  background: #faf4eb;
-}
-
-.info-item strong {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--brand-2);
-}
-
-.info-item p {
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.6;
-}
-
-/* Subtle entrance animation */
-.fade-up {
-  animation: fadeUp 520ms var(--transition-default) both;
-}
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Staggered appearance for feature cards */
-.feature-card:nth-child(1) { animation: fadeUp 560ms var(--transition-default) both; }
-.feature-card:nth-child(2) { animation: fadeUp 680ms var(--transition-default) both; }
-.feature-card:nth-child(3) { animation: fadeUp 800ms var(--transition-default) both; }
-
-@media (max-width: 900px) {
-  .hero-card {
-    grid-template-columns: 1fr;
-    padding: 24px;
-  }
-
-  .feature-grid,
-  .info-list {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-stats {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-image {
-    min-height: 280px;
   }
 }
 </style>
