@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, nextTick, watch } from "vue"
-import { getRecommendations, findRecommendation } from "@/services/recommendService"
+import { getRandomRecommendation, getRecommendations } from "@/services/recommendService"
+import { extractDistrict } from "@/api/openRouter"
 
 const messages = ref([])
 const input = ref("")
@@ -21,172 +22,266 @@ onMounted(async () => {
 
   messages.value.push({
     role: "bot",
-    text: "안녕하세요! 운동하고 싶은 지역을 입력해주세요.\n예) 강남구"
+    text: `안녕하세요! 서울 레포츠 추천 챗봇입니다.
+
+원하는 지역을 입력해 주세요.
+예)
+- 노원구 운동할 곳 추천해줘
+- 상계동 근처 추천해줘
+- 강남에서 가볍게 운동할 곳`,
   })
 
   scrollToBottom()
 })
 
-watch(messages, () => {
-  scrollToBottom()
-}, { deep: true })
+watch(
+  messages,
+  () => {
+    scrollToBottom()
+  },
+  { deep: true },
+)
 
-function sendMessage() {
-  const district = input.value.trim()
+async function sendMessage() {
+  const userMessage = input.value.trim()
 
-  if (!district) {
+  if (!userMessage) {
     return
   }
 
   messages.value.push({
     role: "user",
-    text: district
+    text: userMessage,
   })
 
-  const result = findRecommendation(recommendations, district)
+  input.value = ""
+
+  const aiResult = await extractDistrict(userMessage)
+  const district = aiResult.district
+
+  if (!district) {
+    messages.value.push({
+      role: "bot",
+      text: `지역을 찾지 못했습니다.
+
+예)
+"노원구 운동 장소 추천해줘"
+"상계동 근처 알려줘"`,
+    })
+    return
+  }
+
+  const result = getRandomRecommendation(recommendations, district)
 
   if (result) {
     messages.value.push({
       role: "bot",
-      text: `${result.district} 운동 장소를 추천드립니다.\n\n📍 ${result.title}\n\n운동 종류:\n${result.category}\n\n주소:\n${result.address}\n\n${result.description}`
+      text: `${district} 기준으로 추천드릴게요.
+
+📍 ${result.title}
+
+운동 종류: ${result.category || "레포츠"}
+
+주소: ${result.addr1 || "주소 정보 없음"}
+
+${result.description || "추천 장소의 상세 설명이 준비되어 있습니다."}`,
     })
   } else {
     messages.value.push({
       role: "bot",
-      text: "해당 지역의 추천 장소를 찾지 못했습니다.\n다른 구 이름을 입력해주세요."
+      text: `${district}에 해당하는 추천 장소가 없습니다.`,
     })
   }
-
-  input.value = ""
-  scrollToBottom()
 }
 </script>
 
+
 <template>
-  <div class="chatbot">
-    <div ref="messagesContainer" class="messages">
-      <div
-        v-for="(message, index) in messages"
-        :key="index"
-        class="message-row"
-        :class="message.role"
-      >
-        <div class="bubble">
-          <div class="sender">
-            {{ message.role === 'bot' ? '🤖' : '👤' }}
-            <span>{{ message.role === 'bot' ? '봇' : '나' }}</span>
-          </div>
-          <p>{{ message.text }}</p>
+
+<div class="chatbot">
+
+  <div
+    ref="messagesContainer"
+    class="messages"
+  >
+
+    <div
+      v-for="(message,index) in messages"
+      :key="index"
+      class="message-row"
+      :class="message.role"
+    >
+
+      <div class="bubble">
+
+        <div class="sender">
+
+          {{ message.role === 'bot' ? '🤖' : '👤' }}
+
+          <span>
+            {{ message.role === 'bot' ? '봇' : '나' }}
+          </span>
+
         </div>
+
+
+        <p>
+          {{ message.text }}
+        </p>
+
+
       </div>
+
+
     </div>
 
-    <div class="input-area">
-      <input
-        v-model="input"
-        @keyup.enter.prevent="sendMessage"
-        placeholder="예) 강남구"
-      />
-      <button @click="sendMessage">전송</button>
-    </div>
+
   </div>
+
+
+
+  <div class="input-area">
+
+    <input
+      v-model="input"
+      @keyup.enter.prevent="sendMessage"
+      placeholder="예) 상계동 근처 운동 장소 추천해줘"
+    />
+
+
+    <button
+      @click="sendMessage"
+    >
+      전송
+    </button>
+
+
+  </div>
+
+
+</div>
+
 </template>
 
+
+
 <style scoped>
+
 .chatbot {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 420px;
-  height: 480px;
-  padding: 16px;
-  border-radius: 20px;
-  background: #f7f9fc;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  max-width:420px;
+  height:480px;
+  padding:16px;
+  border-radius:20px;
+  background:#f7f9fc;
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
+  overflow:hidden;
 }
+
+
 
 .messages {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-right: 4px;
-  margin-bottom: 12px;
+  flex:1;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
 }
+
+
 
 .message-row {
-  display: flex;
+  display:flex;
 }
+
+
 
 .message-row.bot {
-  justify-content: flex-start;
+  justify-content:flex-start;
 }
+
+
 
 .message-row.user {
-  justify-content: flex-end;
+  justify-content:flex-end;
 }
+
+
 
 .bubble {
-  max-width: 80%;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: #ffffff;
-  color: #1f2937;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  white-space: pre-line;
+
+  max-width:80%;
+  padding:12px 14px;
+  border-radius:16px;
+  background:white;
+  white-space:pre-line;
+
 }
+
+
 
 .message-row.bot .bubble {
-  border-top-left-radius: 4px;
-  background: #eef4ff;
+  background:#eef4ff;
 }
+
+
 
 .message-row.user .bubble {
-  border-top-right-radius: 4px;
-  background: #dff7e8;
+  background:#dff7e8;
 }
+
+
 
 .sender {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  margin-bottom: 6px;
+
+  font-size:.85rem;
+  font-weight:bold;
+  margin-bottom:6px;
+
 }
+
+
 
 .bubble p {
-  margin: 0;
-  line-height: 1.5;
+
+  margin:0;
+  line-height:1.5;
+
 }
+
+
 
 .input-area {
-  display: flex;
-  gap: 10px;
-  padding-top: 8px;
-  border-top: 1px solid #e5e7eb;
+
+  display:flex;
+  gap:10px;
+  padding-top:10px;
+
 }
+
+
 
 input {
-  flex: 1;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 12px;
-  outline: none;
+
+  flex:1;
+  padding:10px;
+  border-radius:12px;
+  border:1px solid #ddd;
+
 }
+
+
 
 button {
-  padding: 10px 14px;
-  border: none;
-  border-radius: 12px;
-  background: #2563eb;
-  color: white;
-  cursor: pointer;
+
+  padding:10px 14px;
+  border:none;
+  border-radius:12px;
+  background:#2563eb;
+  color:white;
+
 }
 
-button:hover {
-  background: #1d4ed8;
-}
 </style>
