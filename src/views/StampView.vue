@@ -1,48 +1,96 @@
 <template>
-  <section class="place-page stamp-rally">
-    <!-- Header Section (디자인 통일) -->
-    <header class="hero-card page-header">
-      <div>
+  <section class="stamp-page page-shell">
+    <!-- ===== HERO ===== -->
+    <header class="hero-card fade-up">
+      <div class="hero-copy">
         <p class="eyebrow">서울시 자치구</p>
         <h1>도장 깨기 현황</h1>
-        <p class="subtitle">서울시 25개 구를 달리며 방문 기록을 채워보세요!</p>
+        <p class="subtitle">서울시 25개 구를 달리며 방문 기록을 채워보세요.</p>
       </div>
-      <div class="hero-badge">
-        <span>{{ totalVisits }} / 25 구</span>
+
+      <div class="hero-progress">
+        <div class="progress-head">
+          <strong>{{ visitedCount }}</strong><span>/ 25 구</span>
+        </div>
+        <div class="progress-track" role="progressbar" :aria-valuenow="visitedCount" aria-valuemin="0" aria-valuemax="25">
+          <div class="progress-fill" :style="{ width: `${(visitedCount / 25) * 100}%` }"></div>
+        </div>
+        <p class="progress-sub">총 {{ totalStamps }}회 방문 · {{ 25 - visitedCount }}개 구 남음</p>
       </div>
     </header>
 
-    <!-- Main Chart Section (세련된 버블 차트) -->
-    <div class="dashboard-card content-row list-section">
+    <!-- ===== 차트 ===== -->
+    <div class="board-card fade-up">
+      <div class="board-head">
+        <div>
+          <h2>방문 지도</h2>
+          <p class="board-hint">버블을 누르면 방문 1회가 기록돼요.</p>
+        </div>
+        <button type="button" class="btn-ghost" @click="resetAll" :disabled="totalStamps === 0">전체 초기화</button>
+      </div>
+
       <div class="chart-wrapper">
-        <canvas id="stampChart"></canvas>
+        <canvas ref="chartCanvas" aria-label="자치구별 방문 횟수 버블 차트"></canvas>
+      </div>
+
+      <!-- 색상 범례 — 6단계 색이 뭘 의미하는지 알 방법이 없었음 -->
+      <ul class="legend">
+        <li v-for="tier in TIERS" :key="tier.label">
+          <span class="legend-dot" :style="{ background: tier.fill, borderColor: tier.border }"></span>
+          {{ tier.label }}
+        </li>
+      </ul>
+    </div>
+
+    <!-- ===== 입력 ===== -->
+    <div class="input-card-wrap fade-up">
+      <div class="board-head">
+        <div>
+          <h2>기록 수정</h2>
+          <p class="board-hint">숫자를 직접 고치거나 +/− 로 조절하세요.</p>
+        </div>
+      </div>
+
+      <div class="input-grid">
+        <div
+          v-for="gu in districts"
+          :key="gu.name"
+          class="input-card"
+          :class="{ 'is-visited': gu.visits > 0, 'is-focus': focusedName === gu.name }"
+        >
+          <label :for="`gu-${gu.name}`">{{ gu.name }}</label>
+          <div class="stepper">
+            <button type="button" @click="step(gu, -1)" :disabled="gu.visits <= 0" :aria-label="`${gu.name} 1회 빼기`">−</button>
+            <input
+              :id="`gu-${gu.name}`"
+              type="number"
+              inputmode="numeric"
+              v-model.number="gu.visits"
+              @input="onInput(gu)"
+              min="0"
+              max="50"
+              placeholder="0"
+            />
+            <button type="button" @click="step(gu, 1)" :disabled="gu.visits >= 50" :aria-label="`${gu.name} 1회 더하기`">+</button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Stats Input Section (카드형 그리드) -->
-    <div class="input-grid controls-card">
-      <div v-for="(gu, index) in districts" :key="gu.name" class="input-card">
-        <label>{{ gu.name }}</label>
-        <input
-          type="number"
-          v-model.number="gu.visits"
-          @input="updateChart"
-          min="0"
-          max="50"
-          placeholder="0"
-          class="stylish-input"
-        />
-      </div>
-    </div>
+    <Transition name="toast">
+      <div v-if="toast" class="toast" role="status">{{ toast }}</div>
+    </Transition>
   </section>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import Chart from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 Chart.register(ChartDataLabels);
+
+const STORAGE_KEY = 'stampRallyData';
 
 const districts = ref([
   { name: '강남', visits: 0 }, { name: '강동', visits: 0 }, { name: '강북', visits: 0 },
@@ -56,282 +104,320 @@ const districts = ref([
   { name: '중랑', visits: 0 }
 ]);
 
+const chartCanvas = ref(null);
+const focusedName = ref('');
 let myChart = null;
 
-// 총 방문 횟수 계산 (헤더 배지에 표시)
-const totalVisits = computed(() => {
-  return districts.value.filter(d => d.visits > 0).length;
-});
+// --- 브랜드 톤 단계 (기존 블루/그린 팔레트 → 웜톤) ---
+const TIERS = [
+  { min: 0,  label: '미방문',  fill: 'rgba(120, 88, 60, 0.12)', border: 'rgba(120, 88, 60, 0.35)', text: '#8A6A4B' },
+  { min: 1,  label: '1–2회',   fill: '#EBD3AE', border: '#FFF7EF', text: '#5A3A1C' },
+  { min: 3,  label: '3–6회',   fill: '#DFA867', border: '#FFF7EF', text: '#4A2E12' },
+  { min: 7,  label: '7–11회',  fill: '#CE7F35', border: '#FFF7EF', text: '#FFF7EF' },
+  { min: 12, label: '12–19회', fill: '#A9541D', border: '#FFF7EF', text: '#FFF7EF' },
+  { min: 20, label: '20회+',   fill: '#7C3211', border: '#FFF7EF', text: '#FFF7EF' }
+];
+const tierOf = (v) => TIERS.slice().reverse().find(t => (v || 0) >= t.min);
 
-// 세련된 반투명 컬러 팔레트 (두 번째 디자인의 블루/그린 톤 활용)
-const getColor = (visits) => {
-  if (visits === 0) return 'rgba(203, 213, 225, 0.4)'; // #cbd5e1 (light slate)
-  if (visits < 3) return 'rgba(56, 189, 248, 0.6)';  // #38bdf8 (cyan)
-  if (visits < 7) return 'rgba(34, 197, 94, 0.6)';   // #22c55e (green)
-  if (visits < 12) return 'rgba(234, 179, 8, 0.6)';  // #eab308 (yellow)
-  if (visits < 20) return 'rgba(249, 115, 22, 0.6)'; // #f97316 (orange)
-  return 'rgba(239, 68, 68, 0.7)';                   // #ef4444 (red)
+const visitedCount = computed(() => districts.value.filter(d => d.visits > 0).length);
+const totalStamps = computed(() => districts.value.reduce((s, d) => s + (d.visits || 0), 0));
+
+// --- 토스트 ---
+const toast = ref('');
+let toastTimer = null;
+const showToast = (msg) => {
+  toast.value = msg;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.value = ''; }, 1800);
 };
 
-const getBorderColor = (visits) => {
-    if (visits === 0) return 'rgb(148, 163, 184)'; // 진한 회색
-    return 'white'; // 컬러 버블은 흰색 테두리
-}
+// --- 저장 / 불러오기 ---
+// 저장본으로 배열을 통째로 갈아끼우면 구 목록이 바뀔 때 깨지므로 이름 기준으로 병합
+const loadSaved = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (!Array.isArray(saved)) return;
+    const map = new Map(saved.map(d => [d.name, Number(d.visits) || 0]));
+    districts.value.forEach(d => { if (map.has(d.name)) d.visits = map.get(d.name); });
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+};
+
+const save = () => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(districts.value));
+  } catch { /* 저장 공간 초과 시 화면 동작은 유지 */ }
+};
+
+// --- 차트 ---
+const LABEL_INSIDE_R = 24; // 이 이상이면 버블 안, 미만이면 버블 밖에 라벨
+const radiusOf = (visits) => 13 + Math.min(visits || 0, 20) * 0.95;
 
 const generateChartData = () => ({
   datasets: [{
     data: districts.value.map((d, i) => ({
-      x: (i % 5), // 5x5 그리드 배치
+      x: i % 5,
       y: Math.floor(i / 5),
-      r: Math.max(10, Math.min(8 + (d.visits * 1.8), 45)), // 버블 크기 범위 조정
-      visitCount: d.visits,
+      r: radiusOf(d.visits),
+      visitCount: d.visits || 0,
       name: d.name
     })),
-    backgroundColor: districts.value.map(d => getColor(d.visits)),
-    borderColor: districts.value.map(d => getBorderColor(d.visits)),
+    backgroundColor: districts.value.map(d => tierOf(d.visits).fill),
+    borderColor: districts.value.map(d => tierOf(d.visits).border),
     borderWidth: 2,
-    hoverBackgroundColor: districts.value.map(d => getColor(d.visits).replace('0.6', '0.9').replace('0.7', '1.0')),
-    hoverBorderColor: 'white',
     hoverBorderWidth: 3,
+    hoverBorderColor: '#7C3211'
   }]
 });
 
 const updateChart = () => {
-  localStorage.setItem('stampRallyData', JSON.stringify(districts.value));
-  if (myChart) {
-    myChart.data = generateChartData();
-    myChart.update('none'); // 애니메이션 없이 업데이트하여 부드러운 반응 유도
-  }
+  save();
+  if (!myChart) return;
+  myChart.data = generateChartData();
+  myChart.update('none');
+};
+
+const step = (gu, delta) => {
+  gu.visits = Math.min(50, Math.max(0, (gu.visits || 0) + delta));
+  updateChart();
+};
+
+const onInput = (gu) => {
+  if (gu.visits === '' || gu.visits === null) return; // 지우는 중에는 건드리지 않음
+  gu.visits = Math.min(50, Math.max(0, Math.floor(Number(gu.visits) || 0)));
+  updateChart();
+};
+
+const resetAll = () => {
+  if (!confirm('모든 방문 기록을 지웁니다. 되돌릴 수 없어요.')) return;
+  districts.value.forEach(d => { d.visits = 0; });
+  updateChart();
+  showToast('기록을 모두 지웠어요');
 };
 
 onMounted(async () => {
-  const saved = localStorage.getItem('stampRallyData');
-  if (saved) districts.value = JSON.parse(saved);
-
+  loadSaved();
   await nextTick();
-  const ctx = document.getElementById('stampChart').getContext('2d');
 
-  myChart = new Chart(ctx, {
+  myChart = new Chart(chartCanvas.value.getContext('2d'), {
     type: 'bubble',
     data: generateChartData(),
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      layout: {
-        padding: 20 // 차트 내부 패딩
+      layout: { padding: 28 },
+      onHover: (e, els) => {
+        e.native.target.style.cursor = els.length ? 'pointer' : 'default';
+        focusedName.value = els.length ? districts.value[els[0].index].name : '';
+      },
+      // 버블 자체가 도장 — 누르면 찍힘
+      onClick: (e, els) => {
+        if (!els.length) return;
+        const gu = districts.value[els[0].index];
+        step(gu, 1);
+        showToast(`${gu.name}구 ${gu.visits}회째 방문`);
       },
       plugins: {
         legend: { display: false },
-        // 툴팁 설정: 모던하게 변경
         tooltip: {
-          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          backgroundColor: 'rgba(56, 33, 15, 0.92)',
           titleFont: { size: 14, weight: 'bold' },
           bodyFont: { size: 13 },
           padding: 12,
           cornerRadius: 12,
           displayColors: false,
           callbacks: {
-            title: (tooltipItems) => tooltipItems[0].raw.name + '구',
-            label: (tooltipItem) => `방문 횟수: ${tooltipItem.raw.visitCount}회`
+            title: (items) => `${items[0].raw.name}구`,
+            label: (item) => item.raw.visitCount > 0 ? `방문 ${item.raw.visitCount}회` : '아직 안 갔어요'
           }
         },
-        // 데이터 라벨 설정: 버블 중앙에 구 이름 표시
         datalabels: {
-          color: '#1e293b', // 진한 텍스트 컬러
+          formatter: (v) => v.name,
           font: { size: 11, weight: 'bold', family: 'Pretendard, sans-serif' },
-          formatter: (value) => value.visitCount > 0 ? value.name : '', // 방문 0회는 이름 숨김
-          // 라벨이 겹칠 경우 숨기는 옵션
+          // 버블 밖으로 나가는 라벨은 카드 배경 위에 놓이므로 항상 진한 색
+          color: (ctx) => {
+            const p = ctx.dataset.data[ctx.dataIndex];
+            return p.r >= LABEL_INSIDE_R ? tierOf(p.visitCount).text : '#5A3A1C';
+          },
+          anchor: 'center',
+          align: (ctx) => ctx.dataset.data[ctx.dataIndex].r >= LABEL_INSIDE_R ? 'center' : 'bottom',
+          offset: (ctx) => {
+            const p = ctx.dataset.data[ctx.dataIndex];
+            return p.r >= LABEL_INSIDE_R ? 0 : p.r + 3;
+          },
           clamp: true,
           display: 'auto'
         }
       },
-      // 축 숨김
       scales: {
-        x: { display: false, min: -1, max: 5 },
-        y: { display: false, min: -1, max: 5 }
+        x: { display: false, min: -0.6, max: 4.6 },
+        y: { display: false, min: -0.6, max: 4.6, reverse: true }
       },
-      // 상호작용 모드
-      interaction: {
-        mode: 'point',
-        intersect: true
-      },
-      // 애니메이션 설정
-      animation: {
-          duration: 800,
-          easing: 'easeOutQuart'
-      }
+      interaction: { mode: 'point', intersect: true },
+      animation: { duration: 700, easing: 'easeOutQuart' }
     }
   });
+});
+
+onBeforeUnmount(() => {
+  if (toastTimer) clearTimeout(toastTimer);
+  myChart?.destroy(); // 라우트 이동 시 캔버스 누수 방지
+  myChart = null;
 });
 </script>
 
 <style scoped>
-/* --- 디자인 시스템 상속 및 재정의 --- */
-/* 두 번째 코드의 스타일을 기반으로 함 */
+/* page-shell의 배경·폭을 그대로 쓰고, 자체 배경/폰트 재정의는 제거 */
+.stamp-page { display: flex; flex-direction: column; gap: 20px; }
 
-.place-page {
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-  padding: 28px;
-  background:
-    radial-gradient(circle at top left, rgba(37, 99, 235, 0.1), transparent 30%),
-    linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); /* 배경 톤을 약간 더 차분하게 변경 */
-  border-radius: 28px;
-  color: #0f172a;
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
-}
-
+/* ---------- HERO ---------- */
 .hero-card {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #2563eb 100%);
-  color: white;
-  padding: 32px 35px;
-  border-radius: 24px;
-  box-shadow: 0 20px 50px rgba(37, 99, 235, 0.25);
+  gap: 24px;
+  padding: 36px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--brand-2) 0%, var(--brand-1) 100%);
+  color: var(--accent);
+  box-shadow: var(--shadow-lg);
 }
+.hero-card h1 { margin: 0 0 6px; font-size: 1.6rem; letter-spacing: -0.02em; }
+.subtitle { margin: 0; color: rgba(255, 247, 239, 0.95); }
 
-.eyebrow {
-  margin: 0 0 8px;
-  font-size: 0.8rem;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  opacity: 0.85;
+/* 뱃지 하나로 "12/25"만 보여주던 자리를 진행률로 */
+.hero-progress { min-width: 220px; }
+.progress-head { display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px; }
+.progress-head strong { font-size: 2rem; font-weight: 800; line-height: 1; }
+.progress-head span { font-size: 0.9rem; color: rgba(255, 247, 239, 0.7); }
+.progress-track {
+  height: 8px; border-radius: 999px;
+  background: rgba(255, 247, 239, 0.2);
+  overflow: hidden;
 }
-
-.hero-card h1 {
-  margin: 0 0 12px;
-  font-size: 1.8rem;
-  line-height: 1.2;
-  font-weight: 800;
+.progress-fill {
+  height: 100%; border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.4s ease;
 }
+.progress-sub { margin: 8px 0 0; font-size: 0.78rem; color: rgba(255, 247, 239, 0.7); }
 
-.subtitle {
-  margin: 0;
-  opacity: 0.9;
-  line-height: 1.6;
-  max-width: 650px;
-  font-size: 1.05rem;
+/* ---------- 카드 공통 ---------- */
+.board-card, .input-card-wrap {
+  padding: 22px;
+  background: var(--card-bg);
+  border: 1px solid rgba(120, 88, 60, 0.1);
+  border-radius: 18px;
+  box-shadow: 0 6px 18px rgba(56, 33, 15, 0.05);
 }
+.board-head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  margin-bottom: 4px;
+}
+.board-head h2 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--color-text); }
+.board-hint { margin: 4px 0 0; font-size: 0.82rem; color: var(--muted); }
 
-.hero-badge {
-  background: rgba(255, 255, 255, 0.15);
-  padding: 14px 20px;
+.btn-ghost {
+  padding: 8px 14px;
+  border: 1px solid rgba(120, 88, 60, 0.16); border-radius: 999px;
+  background: none; color: var(--muted);
+  font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  transition: color var(--transition-default), border-color var(--transition-default);
+}
+.btn-ghost:hover:not(:disabled) { color: #c0392b; border-color: rgba(192, 57, 43, 0.4); }
+.btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.chart-wrapper { width: 100%; height: 460px; position: relative; }
+
+/* ---------- 범례 ---------- */
+.legend {
+  list-style: none; display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 14px 0 0; margin: 0;
+  border-top: 1px dashed rgba(120, 88, 60, 0.16);
+}
+.legend li {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px 4px 6px;
   border-radius: 999px;
-  font-weight: 800;
-  backdrop-filter: blur(10px);
-  font-size: 1.1rem;
+  background: rgba(247, 235, 220, 0.5);
+  font-size: 0.75rem; font-weight: 600; color: var(--muted);
 }
+.legend-dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid; }
 
-.dashboard-card {
-  background: white;
-  padding: 10px; /* 내부 여백 줄임, 래퍼에서 패딩 처리 */
-  border-radius: 22px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-}
-
-.chart-wrapper {
-  width: 100%;
-  height: 480px; /* 차트 높이 확보 */
-  position: relative;
-}
-
-/* --- 입력 섹션 스타일링 --- */
+/* ---------- 입력 그리드 ---------- */
 .input-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* 카드 최소 너비 조정 */
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 16px;
 }
-
-.controls-card {
-  background: rgba(255, 255, 255, 0.95);
-  padding: 20px;
-  border-radius: 18px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-}
-
 .input-card {
-  background: #f8fafc; /* 카드 배경색 변경 */
-  padding: 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 12px;
   border-radius: 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  background: rgba(250, 246, 239, 0.7);
   border: 1px solid transparent;
-  transition: all 0.25s ease;
+  transition: border-color var(--transition-default), background var(--transition-default), transform var(--transition-default);
 }
+.input-card:hover { transform: translateY(-2px); background: var(--card-bg); border-color: rgba(120, 88, 60, 0.16); }
+.input-card.is-visited { background: rgba(247, 235, 220, 0.85); }
+.input-card.is-focus { border-color: var(--brand-2); background: var(--card-bg); } /* 차트 hover와 연동 */
+.input-card label { font-weight: 700; font-size: 0.9rem; color: var(--color-text); }
 
-.input-card:hover {
-  transform: translateY(-3px);
-  background: white;
-  border-color: #e0e7ff;
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.08);
+/* number 입력만 두면 모바일에서 조작이 힘들어 스테퍼 추가 */
+.stepper {
+  display: flex; align-items: center; width: 100%;
+  border: 1px solid rgba(120, 88, 60, 0.18); border-radius: 10px;
+  background: var(--card-bg);
+  overflow: hidden;
 }
-
-.input-card label {
-  font-weight: 800;
-  margin-bottom: 10px;
-  font-size: 0.95rem;
-  color: #1e293b;
+.stepper button {
+  width: 32px; height: 36px; flex-shrink: 0;
+  border: none; background: none;
+  color: var(--brand-2); font-size: 1.1rem; font-weight: 700; cursor: pointer;
 }
-
-.stylish-input {
-  width: 100%;
-  padding: 10px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
+.stepper button:hover:not(:disabled) { background: rgba(247, 235, 220, 0.9); }
+.stepper button:disabled { opacity: 0.3; cursor: not-allowed; }
+.stepper input {
+  flex: 1; min-width: 0; width: 100%; height: 36px;
+  border: none; background: transparent;
   text-align: center;
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: #2563eb;
-  background: transparent;
-  transition: all 0.3s;
+  font: inherit; font-size: 1rem; font-weight: 700;
+  color: var(--brand-2);
+  font-variant-numeric: tabular-nums;
 }
+.stepper input:focus { outline: none; }
+.stepper:focus-within { border-color: var(--brand-2); box-shadow: 0 0 0 3px rgba(120, 88, 60, 0.1); }
 
-.stylish-input:focus {
-  border-color: #63b3ed;
-  background: white;
-  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
-  outline: none;
-}
-
-/* 스피너 버튼 숨기기 (UX 개선) */
 input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+/* ---------- 토스트 ---------- */
+.toast {
+  position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%);
+  padding: 12px 22px; border-radius: 999px;
+  background: var(--brand-2); color: var(--accent);
+  font-size: 0.88rem; font-weight: 600;
+  box-shadow: var(--shadow-lg); z-index: 1100;
+}
+.toast-enter-active, .toast-leave-active { transition: opacity 0.24s, transform 0.24s; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translate(-50%, 10px); }
+
+/* ---------- 반응형 ---------- */
+@media (max-width: 900px) {
+  .hero-card { grid-template-columns: 1fr; padding: 24px; }
+  .hero-progress { min-width: 0; width: 100%; }
+  .board-card, .input-card-wrap { padding: 16px; }
+  .chart-wrapper { height: 340px; }
+  .input-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
 }
 
-/* --- 반응형 스타일 (두 번째 코드와 일치) --- */
-@media (max-width: 768px) {
-  .place-page {
-    padding: 18px;
-    gap: 18px;
-  }
-
-  .hero-card {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 24px;
-  }
-
-  .hero-badge {
-    margin-top: 8px;
-    font-size: 1rem;
-  }
-
-  .chart-wrapper {
-    height: 350px; /* 모바일에서 차트 높이 축소 */
-  }
-
-  .input-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  }
+@media (prefers-reduced-motion: reduce) {
+  .input-card, .progress-fill, .toast-enter-active, .toast-leave-active { transition: none; }
+  .input-card:hover { transform: none; }
 }
 </style>

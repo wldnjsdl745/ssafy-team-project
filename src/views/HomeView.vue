@@ -5,7 +5,7 @@ import heroImage from '@/assets/images/running_man.png'
 <template>
   <section class="home-shell">
     <div class="hero-card">
-      <div class="hero-copy">
+      <div class="hero-copy fade-up">
         <p class="eyebrow">LocalHub · 서울 레포츠 추천</p>
         <h1>
           원하는 지역에서
@@ -17,8 +17,8 @@ import heroImage from '@/assets/images/running_man.png'
         </p>
 
         <div class="hero-actions">
-          <RouterLink to="/places" class="primary-btn">장소 둘러보기</RouterLink>
-          <RouterLink to="/community" class="ghost-btn">커뮤니티 보기</RouterLink>
+          <RouterLink to="/places" class="primary-btn" aria-label="장소 둘러보기">장소 둘러보기</RouterLink>
+          <RouterLink to="/community" class="ghost-btn" aria-label="커뮤니티 보기">커뮤니티 보기</RouterLink>
         </div>
       </div>
 
@@ -89,45 +89,47 @@ import heroImage from '@/assets/images/running_man.png'
 .home-shell {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding: 24px 0 40px;
+  gap: 28px;
+  padding: 32px 16px 48px;
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
 .hero-card {
   display: grid;
   grid-template-columns: 1.3fr 0.9fr;
-  gap: 20px;
-  padding: 32px;
-  border-radius: 28px;
-  background: linear-gradient(135deg, #22170f 0%, #4b2f1d 55%, #7f4f2d 100%);
-  color: #fff7ef;
-  box-shadow: 0 24px 50px rgba(56, 33, 15, 0.2);
+  gap: 24px;
+  padding: 36px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--brand-2) 0%, var(--brand-1) 100%);
+  color: var(--accent);
+  box-shadow: var(--shadow-lg);
 }
 
 .hero-copy h1 {
   margin: 0 0 14px;
-  font-size: clamp(1.8rem, 3vw, 2.7rem);
-  line-height: 1.2;
+  font-size: clamp(1.9rem, 3.2vw, 2.8rem);
+  line-height: 1.15;
 }
 
 .hero-copy h1 span {
   display: block;
-  color: #ffe3b8;
+  color: var(--accent);
 }
 
 .eyebrow {
   margin: 0 0 10px;
   font-size: 0.82rem;
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #f0d3aa;
+  color: rgba(240,211,170,0.95);
 }
 
 .subtitle {
-  margin: 0 0 20px;
-  max-width: 620px;
-  color: rgba(255, 247, 239, 0.88);
+  margin: 0 0 22px;
+  max-width: 640px;
+  color: rgba(255,247,239,0.95);
   font-size: 1rem;
   line-height: 1.7;
 }
@@ -143,68 +145,77 @@ import heroImage from '@/assets/images/running_man.png'
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 16px;
+  padding: 14px 20px;
   border-radius: 999px;
-  font-weight: 700;
-  transition: transform 0.2s ease, background 0.2s ease;
+  font-weight: 800;
+  transition: transform var(--transition-default), box-shadow var(--transition-default);
+  text-decoration: none;
 }
 
 .primary-btn {
-  background: #fff7ef;
-  color: #4b2f1d;
+  background: var(--card-bg);
+  color: var(--brand-2);
+  box-shadow: 0 8px 22px rgba(16,18,22,0.12);
 }
 
 .ghost-btn {
-  border: 1px solid rgba(255, 247, 239, 0.32);
-  color: #fff7ef;
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,247,239,0.95);
+  background: transparent;
 }
 
 .primary-btn:hover,
 .ghost-btn:hover,
 .feature-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+}
+
+.primary-btn:focus-visible,
+.ghost-btn:focus-visible,
+.feature-card:focus-visible {
+  outline: 3px solid rgba(255,227,184,0.22);
+  outline-offset: 4px;
 }
 
 .hero-image {
   position: relative;
-  min-height: 420px;
-  border-radius: 28px;
+  min-height: 380px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background-size: cover;
   background-position: center;
-  box-shadow: inset 0 0 0 2000px rgba(16, 24, 40, 0.28);
+  box-shadow: inset 0 0 0 2000px rgba(16, 24, 40, 0.22);
 }
 
 .hero-image-overlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.18), transparent 30%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(12, 18, 35, 0.76) 100%);
+  background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12), transparent 30%),
+    linear-gradient(180deg, rgba(0,0,0,0.04), rgba(12,18,35,0.58) 100%);
 }
 
 .hero-stats {
   position: absolute;
-  left: 24px;
-  bottom: 24px;
-  right: 24px;
+  left: 20px;
+  bottom: 20px;
+  right: 20px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 
 .hero-stats div {
-  padding: 16px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.12);
   color: #fff;
 }
 
 .hero-stats p {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   font-size: 0.82rem;
-  opacity: 0.86;
+  opacity: 0.94;
 }
 
 .hero-stats strong {
@@ -220,20 +231,21 @@ import heroImage from '@/assets/images/running_man.png'
 
 .feature-card {
   display: block;
-  padding: 22px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(120, 88, 60, 0.12);
-  box-shadow: 0 16px 30px rgba(56, 33, 15, 0.06);
+  padding: 20px;
+  border-radius: 18px;
+  background: var(--glass);
+  border: 1px solid rgba(120,88,60,0.08);
+  box-shadow: var(--shadow-md);
   color: #433120;
+  transition: transform var(--transition-default), box-shadow var(--transition-default);
 }
 
 .feature-icon {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #f7ebdc;
   font-size: 1.3rem;
   margin-bottom: 12px;
@@ -241,20 +253,20 @@ import heroImage from '@/assets/images/running_man.png'
 
 .feature-card h3 {
   margin: 0 0 8px;
-  font-size: 1.08rem;
+  font-size: 1.06rem;
 }
 
 .feature-card p {
   margin: 0;
-  color: #6c4f32;
+  color: var(--muted);
   line-height: 1.6;
 }
 
 .bottom-section {
   padding: 24px 28px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(120, 88, 60, 0.12);
+  border-radius: 20px;
+  background: var(--glass);
+  border: 1px solid rgba(120,88,60,0.08);
 }
 
 .section-title h2 {
@@ -272,30 +284,54 @@ import heroImage from '@/assets/images/running_man.png'
 
 .info-item {
   padding: 16px;
-  border-radius: 16px;
+  border-radius: 12px;
   background: #faf4eb;
 }
 
 .info-item strong {
   display: block;
   margin-bottom: 6px;
-  color: #4b2f1d;
+  color: var(--brand-2);
 }
 
 .info-item p {
   margin: 0;
-  color: #6b5138;
+  color: var(--muted);
   line-height: 1.6;
 }
+
+/* Subtle entrance animation */
+.fade-up {
+  animation: fadeUp 520ms var(--transition-default) both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Staggered appearance for feature cards */
+.feature-card:nth-child(1) { animation: fadeUp 560ms var(--transition-default) both; }
+.feature-card:nth-child(2) { animation: fadeUp 680ms var(--transition-default) both; }
+.feature-card:nth-child(3) { animation: fadeUp 800ms var(--transition-default) both; }
 
 @media (max-width: 900px) {
   .hero-card {
     grid-template-columns: 1fr;
+    padding: 24px;
   }
 
   .feature-grid,
   .info-list {
     grid-template-columns: 1fr;
+  }
+
+  .hero-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-image {
+    min-height: 280px;
   }
 }
 </style>

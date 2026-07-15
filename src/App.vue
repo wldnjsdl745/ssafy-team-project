@@ -53,7 +53,7 @@
 }
 
 main {
-  padding: 0 16px 24px;
+  padding: 32px 16px 48px;
 }
 
 @media (max-width: 640px) {

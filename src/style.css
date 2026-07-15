@@ -1,13 +1,22 @@
 :root {
-  font-family:
-    Pretendard,
-    "Noto Sans KR",
-    "Apple SD Gothic Neo",
-    Arial,
-    sans-serif;
+  --font-sans: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", Arial, sans-serif;
+  --color-text: #2d241e;
+  --color-bg: #f3eee7;
+  --brand-1: #7f4f2d;
+  --brand-2: #4b2f1d;
+  --accent: #ffe3b8;
+  --card-bg: #ffffff;
+  --muted: #6b5138;
+  --glass: rgba(255,255,255,0.82);
+  --radius: 16px;
+  --radius-lg: 28px;
+  --shadow-md: 0 16px 30px rgba(56,33,15,0.06);
+  --shadow-lg: 0 24px 50px rgba(56,33,15,0.12);
+  --transition-default: 200ms cubic-bezier(.2,.9,.2,1);
 
-  color: #2d241e;
-  background: #f3eee7;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-bg);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -29,6 +38,16 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+}
+
+/* Accessibility: visible focus for keyboard users */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(124, 85, 58, 0.14);
+  outline-offset: 4px;
 }
 
 button,
@@ -55,3 +74,27 @@ img {
 #app {
   min-height: 100vh;
 }
+
+/* Global utility classes reused across views */
+.container-card {
+  padding: 24px;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid rgba(120,88,60,0.06);
+  box-shadow: var(--shadow-md);
+}
+
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 32px 16px 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.fade-up { animation: fadeUp 520ms var(--transition-default) both; }
+
+/* Small helpers */
+.eyebrow { font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:var(--brand-1); }
+.primary-btn { padding: 10px 14px; border-radius: 999px; font-weight:700; background:var(--card-bg); color:var(--brand-2); }
