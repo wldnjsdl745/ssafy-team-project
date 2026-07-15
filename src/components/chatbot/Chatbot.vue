@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, nextTick, watch } from "vue"
-import { getRecommendations, findRecommendation } from "@/servies/recommendService"
+import { getRecommendations, findRecommendation } from "@/services/recommendService"
 
 const messages = ref([])
 const input = ref("")
