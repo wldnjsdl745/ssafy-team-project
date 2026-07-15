@@ -4,6 +4,7 @@ import HomeView from '../views/HomeView.vue'
 import PlaceListView from '../views/PlaceListView.vue'
 import CommunityView from '../views/CommunityView.vue'
 import StampView from '../views/StampView.vue'
+import CommunityDetailView from '../views/CommunityDetailView.vue';
 
 const routes = [
   {
@@ -20,6 +21,11 @@ const routes = [
     path: '/community',
     name: 'community',
     component: CommunityView,
+  },
+  {
+    path: '/community/:id',
+    name: 'CommunityDetail',
+    component: CommunityDetailView
   },
   {
     path: '/stamp',
