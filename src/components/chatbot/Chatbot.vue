@@ -104,6 +104,7 @@ async function sendMessage() {
   const result = getRandomRecommendation(recommendations, district)
 
   if (result) {
+    const address = result.addr1 + (result.addr2 ? `\n${result.addr2}` : '')
     messages.value.push({
       role:'bot',
       text:
@@ -111,13 +112,8 @@ async function sendMessage() {
 
 📍 ${result.title}
 
-운동 종류:
-${result.category}
-
 주소:
-${result.address}
-
-${result.description}`
+${address}`
     })
   } else {
 
