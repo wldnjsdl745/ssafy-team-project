@@ -3,6 +3,7 @@ import { ref, onMounted, nextTick, watch } from 'vue'
 import { getRandomRecommendation, getRecommendations } from '@/services/recommendService'
 import { extractDistrict } from '@/api/openRouter'
 
+const STORAGE_KEY = 'localhub-chatbot-messages'
 const messages = ref([])
 const input = ref('')
 const messagesContainer = ref(null)
@@ -17,24 +18,50 @@ function scrollToBottom() {
   })
 }
 
+function loadChatHistory() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed) && parsed.length) {
+      messages.value = parsed
+      return
+    }
+  } catch (e) {
+    console.warn('챗봇 대화 기록 로드 실패:', e)
+  }
+}
 
+function saveChatHistory() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.value))
+  } catch (e) {
+    console.warn('챗봇 대화 기록 저장 실패:', e)
+  }
+}
 
-onMounted(async () => {
-
-  recommendations = await getRecommendations()
-
-
-  messages.value.push({
-    role: "bot",
+function getInitialGreeting() {
+  return {
+    role: 'bot',
     text:
 `안녕하세요! 운동 장소 추천 챗봇입니다.
 
 원하는 지역을 자연스럽게 입력해주세요.
 예)
 - 노원구 운동할 곳 알려줘
-- 상계동 근처 추천해줘`
-  })
+- 마포구 추천해줘
+- 강남구 운동 장소 알려줘`
+  }
+}
 
+onMounted(async () => {
+  loadChatHistory()
+
+  recommendations = await getRecommendations()
+
+  if (messages.value.length === 0) {
+    messages.value.push(getInitialGreeting())
+  }
 
   scrollToBottom()
 })
@@ -75,6 +102,8 @@ async function sendMessage() {
 
 
 
+  saveChatHistory()
+
   // AI 지역 추출
   const aiResult =
     await extractDistrict(userMessage)
@@ -98,12 +127,14 @@ async function sendMessage() {
 "상계동 근처 알려줘"`
     })
 
+    saveChatHistory()
     return
   }
 
   const result = getRandomRecommendation(recommendations, district)
 
   if (result) {
+    const address = result.addr1 + (result.addr2 ? `\n${result.addr2}` : '')
     messages.value.push({
       role:'bot',
       text:
@@ -111,24 +142,18 @@ async function sendMessage() {
 
 📍 ${result.title}
 
-운동 종류:
-${result.category}
-
 주소:
-${result.address}
-
-${result.description}`
+${address}`
     })
   } else {
-
-
     messages.value.push({
       role:"bot",
       text:
 `${district}에 등록된 추천 장소가 없습니다.`
     })
-
   }
+
+  saveChatHistory()
 
 
 
