@@ -1,70 +1,79 @@
-# SSAFY Startcamp TEAM PJT
+# LocalHub
 
-이 프로젝트는 Vue 3 + Vite 기반의 서울 레포츠 장소 추천 웹 앱입니다.
+Vue 3 + Vite 기반의 서울 레포츠 장소 추천 웹앱입니다.
 
 ## 팀 정보
 
 - 팀명: SSAFY Startcamp TEAM PJT
 - 참여자: 김보경, 김지원, 이주미
 
-현재 구현된 주요 기능은 다음과 같습니다.
+## 프로젝트 소개
 
-## ✅ 구현된 기능
+서울의 레포츠 장소를 탐색하고, 커뮤니티에서 의견을 나누며, 방문한 자치구를 기록해 도장을 모아가는 경험을 제공하는 웹 애플리케이션입니다.
 
-- **홈 페이지**
-  - 사진 배경 히어로 카드 스타일 레이아웃
-  - 서울 레포츠 추천 설명 및 주요 기능 소개
-  - 장소 목록, 커뮤니티, 도장 깨기 페이지로 이동하는 버튼
+## 구현된 기능
 
-- **장소 목록 페이지** (`/places`)
-  - 서울 레포츠 장소 데이터를 `public/data/서울_레포츠.json`에서 로드
-  - 구별 필터 기능으로 장소 목록을 간편하게 탐색
-  - 장소 카드에 이미지, 제목, 주소, 구 태그 표시
-  - **사이드 챗봇** 통합
-    - 자연어로 구/동을 입력하면 서울 구 단위로 추천 장소 반환
-    - `extractDistrict`로 지역 구 추출 후, `getRandomRecommendation`으로 추천 장소 선택
+- 홈 화면
+  - 서비스 소개와 주요 기능 진입 버튼 제공
+  - 최근 커뮤니티 게시글 미리보기 표시
 
-- **커뮤니티 페이지** (`/community`)
-  - 커뮤니티 목록 및 상세 페이지 기본 구조 제공
+- 장소 목록 페이지
+  - 서울 레포츠 장소 데이터를 불러와 목록으로 표시
+  - 구 단위 필터로 원하는 지역의 장소만 확인 가능
+  - 챗봇과 함께 자연어로 구 기반 장소 추천 요청 가능
 
-- **도장 깨기 페이지** (`/stamp`)
-  - 서울 25개 자치구 방문 횟수 입력 UI
-  - `chart.js` 기반 버블 차트로 방문 현황 시각화
-  - 로컬 스토리지에 입력값 저장하여 새로고침 후에도 유지
+- 커뮤니티 페이지
+  - 게시글 목록 조회
+  - 제목/내용/태그 기반 검색
+  - 최신순, 조회수순 정렬
+  - 페이지네이션 지원
+  - 게시글 작성, 상세 조회, 수정, 삭제 기능 제공
+  - 좋아요와 북마크 기능 지원
 
-## 🧩 기술 스택
+- 도장 깨기 페이지
+  - 서울 25개 자치구 방문 횟수 입력 가능
+  - Chart.js 기반 버블 차트로 방문 현황 시각화
+  - 입력값은 브라우저 로컬 저장소에 저장되어 새로고침 후 유지
+
+- 챗봇 기능
+  - 사용자의 지역 관련 질문을 받아 추천 장소 응답
+  - OpenRouter API를 사용할 수 있으며, 없으면 로컬 fallback 방식으로 동작
+
+## 기술 스택
 
 - Vue 3
 - Vite
 - Vue Router
 - Chart.js
-- `chartjs-plugin-datalabels`
+- chartjs-plugin-datalabels
 
-## 📁 주요 파일
+## 실행 방법
 
-- `src/views/HomeView.vue` — 홈 페이지 UI
-- `src/views/PlaceListView.vue` — 장소 목록 및 챗봇 페이지
-- `src/components/chatbot/Chatbot.vue` — 챗봇 UI 및 메시지 로직
-- `src/api/openRouter.js` — OpenRouter API 기반 지역 추출 및 로컬 폴백
-- `src/services/recommendService.js` — 추천 장소 검색 로직
-- `src/views/StampView.vue` — 도장 깨기 버블 차트 뷰
-- `src/router/index.js` — 라우터 설정
+```bash
+npm install
+npm run dev
+```
 
-## 🚀 URL
+## 환경 변수
 
-https://ssafy-17-team-project.netlify.app
-
-## 🔑 OpenRouter 챗봇 설정
-
-챗봇 AI 기능은 `OpenRouter` API를 사용합니다. 로컬에서 사용하려면 프로젝트 루트에 `.env` 또는 Vite 환경 변수에 다음 값을 설정하세요.
+챗봇의 OpenRouter 연동은 선택 사항입니다. API 키가 없으면 로컬 방식으로 기본 추천이 동작합니다.
 
 ```env
 VITE_OPENROUTER_API_KEY=your_openrouter_api_key
 ```
 
-API 키가 없으면 챗봇은 로컬 텍스트 기반 구 추출 방법을 사용하여 기본 추천을 제공합니다.
+## 배포 주소
 
-## 📌 주의 사항
+https://ssafy-17-team-project.netlify.app
 
-- `chart.js`와 `chartjs-plugin-datalabels`가 설치되어 있어야 `StampView` 차트가 정상 동작합니다.
-- 홈, 장소 목록, 커뮤니티, 도장 깨기 페이지는 `src/App.vue`의 네비게이션을 통해 이동할 수 있습니다.
+## 참고 사항
+
+- 장소 데이터는 public/data/서울_레포츠.json 을 사용합니다.
+- 커뮤니티 글, 방문 기록, 챗봇 대화 기록은 브라우저 localStorage에 저장됩니다.
+- 현재 프로젝트는 로컬 프로토타입 형태로 운영되며, 실제 서비스 수준의 보안은 적용되지 않았습니다.
+
+## 출처
+
+이 서비스는 한국관광공사 Tour API(TourAPI 4.0)의 데이터를 활용하였습니다.
+출처: 한국관광공사 (https://www.data.go.kr/data/15101578/openapi.do)
+라이선스: 공공누리 제3유형
