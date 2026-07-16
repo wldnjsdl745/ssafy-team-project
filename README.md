@@ -50,14 +50,9 @@
 - `src/views/StampView.vue` — 도장 깨기 버블 차트 뷰
 - `src/router/index.js` — 라우터 설정
 
-## 🚀 실행 방법
+## 🚀 URL
 
-```bash
-npm install
-npm run dev
-```
-
-브라우저에서 `http://localhost:5177` 또는 Vite가 출력하는 다른 포트로 접속하세요.
+https://ssafy-17-team-project.netlify.app
 
 ## 🔑 OpenRouter 챗봇 설정
 
